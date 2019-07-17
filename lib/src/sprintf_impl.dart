@@ -3,7 +3,7 @@ part of sprintf;
 typedef Formatter PrintFormatFormatter(arg, options);
 
 class PrintFormat {
-  static final RegExp specifier = new RegExp(r'%(?:(\d+)\$)?([\+\-\#0 ]*)(\d+|\*)?(?:\.(\d+|\*))?([a-z%])', caseSensitive : false);
+  static final RegExp specifier = new RegExp(r'%(\d+)\$(?:(\d+)\$)?([\+\-\#0 ]*)(\d+|\*)?(?:\.(\d+|\*))?([a-z%])', caseSensitive : false);
   static final RegExp uppercase_rx = new RegExp(r'[A-Z]', caseSensitive: true);
 
   Map<String, PrintFormatFormatter> _formatters = {
@@ -29,14 +29,13 @@ class PrintFormat {
 
 
     int offset = 0;
-    int arg_offset = 0;
 
     if (args is! List) {
       throw new ArgumentError('Expecting list as second argument');
     }
 
     for (Match m in specifier.allMatches(fmt)) {
-      String _parameter = m[1];
+      int _pos = int.parse(m[1]);
       String _flags = m[2];
       String _width = m[3];
       String _precision = m[4];
@@ -56,21 +55,21 @@ class PrintFormat {
       _parse_flags(_flags).forEach((var K, var V) { _options[K] = V; });
 
       // The argument we want to deal with
-      var _arg = _parameter == null ? null : args[int.parse(_parameter)];
+      var _arg = null;
 
       // parse width
       if (_width != null) {
-        _options['width'] = (_width == '*' ? args[arg_offset++] : int.parse(_width));
+        _options['width'] = (_width == '*' ? args[_pos - 1] : int.parse(_width));
       }
 
       // parse precision
       if (_precision != null) {
-        _options['precision'] = (_precision == '*' ? args[arg_offset++] : int.parse(_precision));
+        _options['precision'] = (_precision == '*' ? args[_pos - 1] : int.parse(_precision));
       }
 
       // grab the argument we'll be dealing with
       if (_arg == null && _type != '%') {
-        _arg = args[arg_offset++];
+        _arg = args[_pos - 1];
       }
 
       _options['is_upper'] = uppercase_rx.hasMatch(_type);
